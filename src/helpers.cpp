@@ -1,5 +1,4 @@
 #include <lunarutils/helpers.hpp>
-
 std::string ByondValue_ToString(CByondValue *val) {
     u4c len = 0;
     Byond_ToString(val, nullptr, &len);

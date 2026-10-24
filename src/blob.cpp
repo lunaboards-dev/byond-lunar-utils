@@ -5,6 +5,8 @@
 #include <cstdint>
 #include <cstdio>
 #include <stdexcept>
+#include <format>
+#include <lunarutils/types.hpp>
 
 int ByondBlob::read(int amt, void *buffer) {
     int ramt = this->read_in(this->offset, amt, buffer);
@@ -169,12 +171,18 @@ void ByondBlob::set(CByondValue &val) {
     Byond_WriteVar(&val, "ptr", &ptr);
 }
 
+char * modes[] = {"rb", "wb", "r+b"};
+
 class FileBlob : public ByondBlob {
     private:
         FILE * handle;
         int read_in(int offset, int amt, void * buffer) {
             fseek(handle, SEEK_SET, offset);
             return fread(buffer, 1, amt, handle);
+        }
+        int write_out(int offset, int amt, void * buffer) {
+            fseek(handle, SEEK_SET, offset);
+            return fwrite(buffer, 1, amt, handle);
         }
     public:
         int size() override {
@@ -185,8 +193,11 @@ class FileBlob : public ByondBlob {
             fclose(handle);
         }
 
-        FileBlob(const char * path) {
-            handle = fopen(path, "rb");
+        FileBlob(const char * path, char mode) : ByondBlob() {
+            if (mode < 1 || mode > 2) {
+                throw std::invalid_argument("mode must be READ or WRITE");
+            }
+            handle = fopen(path, modes[mode]);
             if (handle == nullptr) {
                 throw std::runtime_error("file not found");
             }
@@ -194,14 +205,98 @@ class FileBlob : public ByondBlob {
 };
 
 BYOND_API_METHOD(lu_blob_openfile) {
-    printf("argc: %d\n", argc);
-    if (argc != 1) {
-        Byond_CRASH("lu_openfile requires a path");
+    if (argc != 2) {
+        Byond_CRASH("lu_openfile requires a path and a mode");
         return {};
     }
-    std::string path = ByondValue_ToString(argv);
-    ByondBlob * blob = new FileBlob(path.c_str());
     CByondValue val;
-    blob->set(val);
+    std::string path = ByondValue_ToString(argv);
+    CByondValue _mode = argv[1];
+    int mode = _mode.data.num;
+    try {
+        ByondBlob * blob = new FileBlob(path.c_str(), mode);
+        blob->set(val);
+    } catch(const std::exception &e) {
+        Byond_CRASH(std::format("C++ Exception: {}", e.what()).c_str());
+    }
     return val;
+}
+
+BYOND_API_METHOD(lu_blob_write) {
+    if (argc != 2) {
+        Byond_CRASH("write requires src and data");
+        return {};
+    }
+    CByondValue src = argv[0];
+    ByondBlob * blob = from_ptr(src);
+    CByondValue _data = argv[1];
+    std::string str = ByondValue_ToString(&_data);
+    return (blob->write(str.length(), str.data()) == str.length()) ? ByondTrue : ByondFalse;
+}
+
+BYOND_API_METHOD(lu_blob_write8) {
+    if (argc != 3) {
+        Byond_CRASH("write requires src, data, and signed");
+        return {};
+    }
+    CByondValue src = argv[0];
+    ByondBlob * blob = from_ptr(src);
+    CByondValue _data = argv[1];
+    CByondValue _signed = argv[2];
+    
+    bool issigned = _signed.data.ref;
+    int val = _data.data.num;
+
+    int written = 0;
+
+    if (issigned) {
+        signed char vwrite = val;
+        written = blob->write(1, &vwrite);
+    } else {
+        char vwrite = val;
+        written = blob->write(1, &vwrite);
+    }
+    return (written == 1) ? ByondTrue : ByondFalse;
+}
+
+BYOND_API_METHOD(lu_blob_write16) {
+    if (argc != 3) {
+        Byond_CRASH("write requires src, data, and be");
+        return {};
+    }
+    CByondValue src = argv[0];
+    ByondBlob * blob = from_ptr(src);
+    CByondValue _data = argv[1];
+    CByondValue _be = argv[2];
+
+    short wval = _data.data.num;
+
+    if (_be.data.ref != 0) {
+        wval = (wval >> 8) | (wval << 8);
+    }
+
+    return (blob->write(2, &wval) == 2) ? ByondTrue : ByondFalse;
+}
+
+BYOND_API_METHOD(lu_blob_writefloat) {
+    if (argc != 3) {
+        Byond_CRASH("write requires src, data, and be");
+        return {};
+    }
+    CByondValue src = argv[0];
+    ByondBlob * blob = from_ptr(src);
+    CByondValue _data = argv[1];
+    CByondValue _be = argv[2];
+
+    float _wval = _data.data.num;
+    int buffer = *((int*) &_wval);
+
+    if (_be.data.ref != 0) {
+        buffer = ((buffer & 0xFF) << 24) |
+                 ((buffer & 0xFF00) << 8) |
+                 ((buffer & 0xFF0000) >> 8) |
+                 (buffer >> 24);
+    }
+
+    return (blob->write(4, &buffer) == 4) ? ByondTrue : ByondFalse;
 }
