@@ -13,8 +13,8 @@
 // END_PREFERENCES
 
 // BEGIN_INCLUDE
-#include "_test\init.dm"
 #include "dm\_DEFINES\lunarutils.dm"
 //#include "dm\lunarutils\subsystem.dm"
 #include "dm\lunarutils\blob.dm"
+#include "_test\init.dm"
 // END_INCLUDE

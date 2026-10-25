@@ -102,6 +102,9 @@ enum WrappedType {
 	W_UNKNOWN
 };
 
+std::string Byond_TypeName(CByondValue &val);
+WrappedType Byond_WrappedType(ByondDataType dt);
+
 // THIS IS ONLY FOR USE INSIDE FUNCTIONS
 class LByondValue {
     private:
@@ -172,6 +175,3 @@ static CByondValue ByondWorld = {
     .type = WORLD_D,
     .data = {.num = 0}
 };
-
-std::string Byond_TypeName(CByondValue &val);
-WrappedType Byond_WrappedType(ByondDataType dt);

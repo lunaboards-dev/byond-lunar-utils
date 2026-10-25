@@ -4,22 +4,29 @@
 
 std::string Byond_TypeName(CByondValue &val) {
     ByondDataType dt = (ByondDataType) val.type;
-    static const std::unordered_map<ByondDataType, std::string> type_names = {
-        {NULL_D, "NULL"},
-        {TURF, "TURF"},
-        {OBJ, "OBJ"},
-        {MOB, "MOB"},
-        {AREA, "AREA"},
-        {CLIENT, "CLIENT"},
-        {STRING, "STRING"},
-        {DATUM, "DATUM"},
-        {SAVEFILE, "SAVEFILE"},
-        {PROCPATH, "PROC"},
-        {FILE_, "FILE"},
-        {PREFAB, "PREFAB"},
-        {APPEARANCE, "APPEARANCE"},
-        {FILTERS, "FILTERS"}
-    };   
+    static const std::unordered_map<WrappedType, std::string> type_names = {
+        {W_NULL, "NULL"},
+        {W_TURF, "TURF"},
+        {W_OBJ, "OBJ"},
+        {W_MOB, "MOB"},
+        {W_AREA, "AREA"},
+        {W_CLIENT, "CLIENT"},
+        {W_STRING, "STRING"},
+        {W_DATUM, "DATUM"},
+        {W_SAVEFILE, "SAVEFILE"},
+        {W_PROCPATH, "PROC"},
+        {W_FILE, "FILE"},
+        {W_PREFAB, "PREFAB"},
+        {W_APPEARANCE, "APPEARANCE"},
+        {W_FILTERS, "FILTERS"},
+        {W_LIST, "LIST"},
+        {W_TYPEPATH, "TYPE"},
+        {W_UNKNOWN, "UNKNOWN"}
+    };
+    WrappedType wt = Byond_WrappedType(dt);
+    if (type_names.contains(wt))
+        return type_names.at(wt);
+    return "UNKNOWN";
 }
 
 WrappedType Byond_WrappedType(ByondDataType dt) {

@@ -11,6 +11,10 @@
     var/global/lu_blob_seek
     var/global/lu_blob_size
     var/global/lu_blob_close
+    var/global/lu_blob_write
+    var/global/lu_blob_write8
+    var/global/lu_blob_write16
+    var/global/lu_blob_writefloat
 
 /datum/lu_blob/proc/open_lib()
     if (lu_blob_read != null)
@@ -22,12 +26,16 @@
     LOAD_EXT(lu_blob_seek)
     LOAD_EXT(lu_blob_size)
     LOAD_EXT(lu_blob_close)
+    LOAD_EXT(lu_blob_write)
+    LOAD_EXT(lu_blob_write8)
+    LOAD_EXT(lu_blob_write16)
+    LOAD_EXT(lu_blob_writefloat)
 
 /datum/lu_blob/proc/closed()
     open_lib()
     return IS_CLOSED
 
-/datum/lu_blob/proc/readstr(count)
+/datum/lu_blob/proc/read(count)
     open_lib()
     if IS_CLOSED
         throw "cannot read from closed handle"
@@ -68,8 +76,44 @@
     if (!IS_CLOSED)
         return call_ext(lu_blob_close)(src)
 
-/proc/lu_openfile(path)
-    return call_ext(world.system_type == "windows" ? "./lunarutils.dll" : "./liblunarutils.so", "byond:lu_blob_openfile")(path)
+/datum/lu_blob/proc/write(str)
+    open_lib()
+    if (!IS_CLOSED)
+        return call_ext(lu_blob_write)(src, str)
+
+/datum/lu_blob/proc/write8(data)
+    open_lib()
+    if (!IS_CLOSED)
+        return call_ext(lu_blob_write8)(src, data)
+
+/datum/lu_blob/proc/write16(data, be = FALSE)
+    open_lib()
+    if (!IS_CLOSED)
+        return call_ext(lu_blob_write16)(src, data, be)
+
+/datum/lu_blob/proc/writefloat(data, be = FALSE)
+    open_lib()
+    if (!IS_CLOSED)
+        return call_ext(lu_blob_writefloat)(src, data, be)
+
+/datum/lu_blob/proc/writestr(data)
+    write16(length(data))
+    write(data)
+
+/datum/lu_blob/proc/writestr8(data)
+    write16(length(data))
+    write(data)
+
+/datum/lu_blob/proc/readstr(data)
+    var/len = read16()
+    return read(len)
+
+/datum/lu_blob/proc/readstr8(data)
+    var/len = read8()
+    return read(len)
+
+/proc/lu_openfile(path, mode = OPEN_READ)
+    return call_ext(world.system_type == "windows" ? "./lunarutils.dll" : "./liblunarutils.so", "byond:lu_blob_openfile")(path, mode)
 
 #undef IS_CLOSED
 #undef LOAD_EXT

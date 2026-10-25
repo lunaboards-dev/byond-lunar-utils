@@ -9,7 +9,15 @@
 #include <lunarutils/types.hpp>
 
 int ByondBlob::read(int amt, void *buffer) {
+    if (mode & LU_BLOB_READ == 0) throw new std::runtime_error("attempt to read from write only blob");
     int ramt = this->read_in(this->offset, amt, buffer);
+    this->offset += ramt;
+    return ramt;
+}
+
+int ByondBlob::write(int amt, void * buffer) {
+    if (mode & LU_BLOB_READ == 0) throw new std::runtime_error("attempt to write to read only blob");
+    int ramt = this->write_out(this->offset, amt, buffer);
     this->offset += ramt;
     return ramt;
 }
@@ -197,7 +205,7 @@ class FileBlob : public ByondBlob {
             if (mode < 1 || mode > 2) {
                 throw std::invalid_argument("mode must be READ or WRITE");
             }
-            handle = fopen(path, modes[mode]);
+            handle = fopen(path, modes[mode-1]);
             if (handle == nullptr) {
                 throw std::runtime_error("file not found");
             }
@@ -231,31 +239,32 @@ BYOND_API_METHOD(lu_blob_write) {
     ByondBlob * blob = from_ptr(src);
     CByondValue _data = argv[1];
     std::string str = ByondValue_ToString(&_data);
-    return (blob->write(str.length(), str.data()) == str.length()) ? ByondTrue : ByondFalse;
+    return (blob->write(str.length()-1, str.data()) == str.length()-1) ? ByondTrue : ByondFalse;
 }
 
 BYOND_API_METHOD(lu_blob_write8) {
-    if (argc != 3) {
-        Byond_CRASH("write requires src, data, and signed");
+    if (argc != 2) {
+        Byond_CRASH("write requires src and data");
         return {};
     }
     CByondValue src = argv[0];
     ByondBlob * blob = from_ptr(src);
     CByondValue _data = argv[1];
-    CByondValue _signed = argv[2];
+    // CByondValue _signed = argv[2];
     
-    bool issigned = _signed.data.ref;
-    int val = _data.data.num;
+    // bool issigned = _signed.data.ref;
+    char val = _data.data.num;
 
     int written = 0;
 
-    if (issigned) {
+    /* if (issigned) {
         signed char vwrite = val;
         written = blob->write(1, &vwrite);
     } else {
         char vwrite = val;
         written = blob->write(1, &vwrite);
-    }
+    } */
+    written = blob->write(1, &val);
     return (written == 1) ? ByondTrue : ByondFalse;
 }
 
