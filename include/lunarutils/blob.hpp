@@ -1,5 +1,6 @@
 #pragma once
 
+#include <vector>
 #include <lunarutils/helpers.hpp>
 
 #define LU_BLOB_READ 1
@@ -7,11 +8,11 @@
 
 class ByondBlob {
     private:
-        char mode = 0;
         int offset = 0;
         virtual int read_in(int pos, int amt, void * buffer) = 0;
         virtual int write_out(int pos, int amt, void * buffer) = 0;
     public:
+        char mode = 0;
         virtual int size() = 0;
         int read(int amt, void * buffer);
         int seek(int whence, int offset);
@@ -19,6 +20,30 @@ class ByondBlob {
         virtual void close() = 0;
 
         void set(CByondValue &val);
+};
+
+class VectorBlob : ByondBlob {
+    private:
+        std::vector<char> memory;
+        int read_in(int pos, int amt, void * buffer) override;
+        int write_out(int pos, int amt, void * buffer) override;
+    public:
+        VectorBlob();
+        int size() override;
+        void close() override;
+};
+
+class MemoryBlob : ByondBlob {
+    private:
+        bool should_free;
+        int isize;
+        int read_in(int pos, int amt, void * buffer) override;
+        int write_out(int pos, int amt, void * buffer) override;
+    public:
+        void * ptr;
+        MemoryBlob(void * src, int size, bool should_free = true);
+        int size() override;
+        void close() override;
 };
 
 BYOND_API_DEF(lu_blob_openfile);
