@@ -22,7 +22,7 @@ class ByondBlob {
         void set(CByondValue &val);
 };
 
-class VectorBlob : ByondBlob {
+class VectorBlob : public ByondBlob {
     private:
         std::vector<char> memory;
         int read_in(int pos, int amt, void * buffer) override;
@@ -33,7 +33,7 @@ class VectorBlob : ByondBlob {
         void close() override;
 };
 
-class MemoryBlob : ByondBlob {
+class MemoryBlob : public ByondBlob {
     private:
         bool should_free;
         int isize;
@@ -46,6 +46,7 @@ class MemoryBlob : ByondBlob {
         void close() override;
 };
 
+BYOND_API_DEF(lu_blob_new);
 BYOND_API_DEF(lu_blob_openfile);
 BYOND_API_DEF(lu_blob_read);
 BYOND_API_DEF(lu_blob_read8);

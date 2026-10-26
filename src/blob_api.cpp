@@ -2,6 +2,7 @@
 #include <lunarutils/types.hpp>
 #include <cstring>
 #include <cstdint>
+#include <format>
 
 ByondBlob * from_ptr(CByondValue &val) {
     CByondValue pval;
@@ -216,4 +217,23 @@ BYOND_API_METHOD(lu_blob_writefloat) {
     }
 
     return (blob->write(4, &buffer) == 4) ? ByondTrue : ByondFalse;
+}
+
+BYOND_API_METHOD(lu_blob_new) {
+    if (argc != 0) {
+        Byond_CRASH("lu_blob_new takes no args");
+        return {};
+    }
+
+    CByondValue val;
+    std::string path = ByondValue_ToString(argv);
+    CByondValue _mode = argv[1];
+    int mode = _mode.data.num;
+    try {
+        ByondBlob * blob = new VectorBlob();
+        blob->set(val);
+    } catch(const std::exception &e) {
+        Byond_CRASH(std::format("C++ Exception: {}", e.what()).c_str());
+    }
+    return val;
 }

@@ -115,5 +115,8 @@
 /proc/lu_openfile(path, mode = OPEN_READ)
     return call_ext(world.system_type == "windows" ? "./lunarutils.dll" : "./liblunarutils.so", "byond:lu_blob_openfile")(path, mode)
 
+/proc/lu_newblob()
+    return call_ext(world.system_type == "windows" ? "./lunarutils.dll" : "./liblunarutils.so", "byond:lu_blob_create")()
+
 #undef IS_CLOSED
 #undef LOAD_EXT
